@@ -1,191 +1,180 @@
 # Secure Chat Application
 
 ## Overview
-A secure, end-to-end encrypted chat application demonstrating:
-- Asynchronous network programming
-- Secure communication protocols
-- Docker containerization
-- Advanced encryption techniques
+A secure, end-to-end encrypted chat application featuring:
+- End-to-end encryption using RSA and Fernet
+- User authentication and registration system
+- Direct and broadcast messaging capabilities
+- Web-based server monitoring interface
+- Configuration management
+- Comprehensive logging system
 
 ## Features
-- End-to-end encryption
-- User authentication
-- Direct and broadcast messaging
-- Dockerized deployment
-- Secure key exchange mechanism
+- **Secure Communication**
+  - Asymmetric key exchange (RSA 2048-bit)
+  - Symmetric message encryption (Fernet)
+  - Unique per-session encryption keys
+- **User Management**
+  - User registration
+  - Secure authentication
+  - SQLite database storage
+- **Messaging Capabilities**
+  - Direct messaging with @username syntax
+  - Broadcast messaging to all users
+  - Real-time message delivery
+- **Server Monitoring**
+  - Web-based status dashboard
+  - Connected clients tracking
+  - Server status monitoring
+- **Configuration Management**
+  - Flexible configuration system
+  - Environment-specific settings
+  - Customizable logging levels
 
-## Technical Stack
-- Python 3.9+
-- Asyncio
-- Cryptography Library
-- Docker
-- SQLite
-
-## Encryption Mechanism
-- Asymmetric key exchange (RSA)
-- Symmetric message encryption (Fernet)
-- Unique per-session encryption keys
+## Project Structure
+```
+secure-chat-application/
+├── client/
+│   ├── client.py
+│   ├── config_manager.py
+│   ├── config.ini
+│   └── requirements.txt
+└── server/
+    ├── server.py
+    ├── server_status_manager.py
+    ├── requirements.txt
+    └── templates/
+        └── server_status.html
+```
 
 ## Prerequisites
 - Python 3.9+
-- Docker
-- Docker Compose
+- Flask (for server monitoring)
+- Cryptography library
+- Asyncio
 
 ## Installation
 
-### Local Development
-1. Clone the repository
+### Client Setup
+1. Navigate to the client directory:
 ```bash
-git clone https://github.com/yourusername/secure-chat-application.git
-cd secure-chat-application
+cd client
 ```
 
-2. Create virtual environment
+2. Create a virtual environment:
 ```bash
-python3 -m venv venv
+python -m venv venv
 source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
 ```
 
-3. Install dependencies
+3. Install dependencies:
 ```bash
-pip install -r server/requirements.txt
-pip install -r client/requirements.txt
+pip install -r requirements.txt
 ```
 
-### Docker Deployment
+### Server Setup
+1. Navigate to the server directory:
 ```bash
-# Build and start containers
-docker-compose up --build
-
-# Stop containers
-docker-compose down
+cd server
 ```
 
-## Usage Scenarios
-
-### Running Locally
-1. Start the server
+2. Create a virtual environment:
 ```bash
-python server/server.py
+python -m venv venv
+source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
 ```
 
-2. In separate terminals, start clients
+3. Install dependencies:
 ```bash
-python client/client.py
+pip install -r requirements.txt
 ```
 
-### Docker Usage
-1. Start services
+## Configuration
+### Client Configuration (config.ini)
+```ini
+[Server]
+host = localhost
+port = 8888
+
+[Logging]
+level = INFO
+debug_mode = False
+
+[Client]
+receive_buffer = 4096
+```
+
+## Usage
+
+### Starting the Server
+1. Navigate to the server directory
+2. Activate the virtual environment
+3. Run the server:
 ```bash
-docker-compose up
+python server.py
 ```
+The server will start on localhost:8888 and the monitoring interface will be available at http://localhost:8080
 
-2. Interact with clients
+### Running the Client
+1. Navigate to the client directory
+2. Activate the virtual environment
+3. Run the client:
 ```bash
-# Access client container
-docker exec -it secure-chat-client-1 /bin/bash
+python client.py
 ```
 
-## Messaging Modes
+### Client Commands
+- Register: Choose option 1 and follow the prompts
+- Login: Choose option 2 and enter credentials
+- Send broadcast message: Type your message and press Enter
+- Send direct message: Use @username followed by your message
+- Exit: Type 'exit' or choose option 3 from the main menu
 
-### Broadcast Message
-Simply type and send a message to broadcast to all connected clients.
+## Security Features
+- RSA 2048-bit key pairs for secure key exchange
+- Fernet symmetric encryption for message content
+- SQLite database for user credential storage
+- Secure handshake protocol for client-server communication
+
+## Monitoring
+Access the server status dashboard at http://localhost:8080 to view:
+- Server running status
+- Number of connected clients
+- Real-time server statistics
+
+## Development
+
+### Adding New Features
+1. Fork the repository
+2. Create a feature branch
+3. Implement your changes
+4. Submit a pull request
+
+### Running Tests
+```bash
+python -m unittest discover tests
 ```
-Enter message: Hello, everyone!
-```
-
-### Direct Messaging
-Use `@username` prefix to send a private message.
-```
-Enter message: @john Hello, John! This is a private message.
-```
-
-## Security Details
-
-### Key Exchange Process
-1. Client generates RSA key pair
-2. Public key sent to server
-3. Server generates unique symmetric key
-4. Symmetric key encrypted with client's public key
-5. Encrypted key sent back to client
-6. Client decrypts symmetric key using private key
-
-### Encryption Layers
-- **Asymmetric Encryption**: RSA 2048-bit
-  - Secure key exchange
-  - Protects symmetric key transmission
-
-- **Symmetric Encryption**: Fernet (AES-128)
-  - Encrypts actual messages
-  - Provides high-performance encryption
 
 ## Troubleshooting
 
 ### Common Issues
-- Ensure Docker is running
-- Check network configurations
-- Verify Python and dependency versions
+1. Connection Refused
+   - Verify server is running
+   - Check correct host/port in config.ini
+   - Ensure no firewall blocking
 
-### Logging
-- Server logs stored in `server/logs/`
-- Client logs displayed in console
+2. Authentication Failed
+   - Verify correct username/password
+   - Check database connectivity
+   - Ensure server is properly initialized
 
-## Performance Considerations
-- Asyncio provides high concurrency
-- Lightweight encryption mechanism
-- Minimal overhead in message transmission
-
-## Monitoring and Metrics
-- Implement logging
-- Add performance tracking
-- Consider Prometheus/Grafana integration
-
-## Development Roadmap
-- [ ] Implement password hashing
-- [ ] Add user registration endpoint
-- [ ] Create web-based admin interface
-- [ ] Implement message persistence
-- [ ] Add TLS support
-- [ ] Develop comprehensive test suite
-
-## Contributing Guidelines
-1. Fork the repository
-2. Create a feature branch
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-3. Commit changes
-   ```bash
-   git commit -m "Add detailed description of changes"
-   ```
-4. Push to branch
-   ```bash
-   git push origin feature/your-feature-name
-   ```
-5. Create pull request
-
-## Code of Conduct
-- Be respectful
-- Provide constructive feedback
-- Follow PEP 8 guidelines
-- Write comprehensive tests
-
-## Performance Benchmarks
-
-### System Requirements
-- Minimum: 1 CPU, 1GB RAM
-- Recommended: 2 CPU, 2GB RAM
-
-### Estimated Capabilities
-- Concurrent Connections: 100-500
-- Message Latency: <50ms
-- Encryption Overhead: ~5-10ms per message
+3. Message Encryption Errors
+   - Verify key exchange completed successfully
+   - Check for connection interruptions
+   - Ensure client and server versions match
 
 ## License
 Apache License 2.0
 
 ## Disclaimer
-This is an educational project demonstrating secure communication principles. Not recommended for production use without further hardening.
-
-## Contact
-For questions or support, please open an issue on GitHub.
+This is an educational project demonstrating secure communication principles. Not recommended for production use without further security hardening.
