@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  # Secure Chat Server
+  server:
+    build:
+      context: ../server
+    networks:
+      - secure_chat_network
+    ports:
+      - "8888:8888"
+    container_name: secure-chat-server
+    restart: always
+    environment:
+      - SERVER_HOST=localhost
+
+  # Client 1 Configuration
+  client1:
+    build:
+      context: ../client
+    networks:
+      - secure_chat_network
+    depends_on:
+      - server
+    container_name: secure-chat-client-1
+    stdin_open: true
+    tty: true
+    environment:
+      - SERVER_HOST=server
+
+  # Client 2 Configuration
+  client2:
+    build:
+      context: ../client
+    networks:
+      - secure_chat_network
+    depends_on:
+      - server
+    container_name: secure-chat-client-2
+    stdin_open: true
+    tty: true
+    environment:
+      - SERVER_HOST=server
+
+# Network configuration
+networks:
+  secure_chat_network:
+    driver: bridge
+    name: secure-chat-network
