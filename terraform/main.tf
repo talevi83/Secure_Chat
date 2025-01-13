@@ -144,7 +144,7 @@ resource "aws_instance" "chat_server" {
               # Clone your repository
               git clone https://github.com/talevi83/Secure_Chat.git .
               sudo -i
-              cd /app/chat-server/docker
+              cd /app/chat-server/
 
               # Start the containers (assuming docker-compose.yml exists in the repo)
               sudo docker-compose up -d
