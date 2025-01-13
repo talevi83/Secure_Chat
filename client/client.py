@@ -228,7 +228,7 @@ class SecureChatClient:
                     sender_name = packet.get("from", "unknown")
 
                     # Clear the current input line and print the message
-                    print(f"\r[{sender_name}]: {decrypted}")
+                    print(f"\n[{sender_name}]: {decrypted}")
                     print("Enter message (or 'exit'): ", end="", flush=True)
 
                 except Exception as e:

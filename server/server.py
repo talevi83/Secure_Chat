@@ -16,6 +16,9 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import serialization
 from flask import Flask, current_app, render_template
+from server_status_manager import init_app, run_status_app, app
+
+from server_status_manager import init_app
 
 app = Flask(__name__)
 
@@ -347,17 +350,17 @@ def server_status():
 
 async def main():
     global chat_server
-    chat_server = SecureChatServer()
+    chat_server = SecureChatServer(host='0.0.0.0')  # Change this to bind to all interfaces
+
+    # Initialize Flask app with server instance
+    init_app(chat_server)
 
     # Start the Secure Chat server (non-blocking)
     await chat_server.start_server()
 
     # Run Flask in a separate thread
     import threading
-    def run_flask():
-        app.run(host='localhost', port=8080, debug=False, use_reloader=False)
-
-    flask_thread = threading.Thread(target=run_flask, daemon=True)
+    flask_thread = threading.Thread(target=run_status_app, daemon=True)
     flask_thread.start()
 
     # Keep the server alive indefinitely

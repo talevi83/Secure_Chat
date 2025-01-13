@@ -1,0 +1,35 @@
+# Use Python 3.9 slim image as base
+FROM python:3.9-slim
+
+# Set working directory in container
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first to leverage Docker cache
+COPY server/requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Create templates directory
+RUN mkdir -p templates
+
+# Copy server files
+COPY server/server.py .
+COPY server/server_status_manager.py .
+COPY server/templates/server_status.html ./templates/
+
+# Create volume mount point for database
+VOLUME ["/app/users.db"]
+
+# Expose ports for chat server and monitoring
+EXPOSE 8888
+EXPOSE 8080
+
+# Command to run the server
+CMD ["python", "server.py"]

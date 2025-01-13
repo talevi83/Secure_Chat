@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  chat-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    container_name: secure-chat-server
+    ports:
+      - "8888:8888"  # Chat server port
+      - "8080:8080"  # Web monitoring interface
+    networks:
+      - encriptochat-network
+    volumes:
+      - ./server/users.db:/app/users.db  # Persist user database
+
+#  chat-client-1:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile.client
+#    container_name: secure-chat-client-1
+#    depends_on:
+#      - chat-server
+#    networks:
+#      - encriptochat-network
+#    stdin_open: true
+#    tty: true
+#    environment:
+#      - SERVER_HOST=chat-server
+#      - SERVER_PORT=8888
+#
+#  chat-client-2:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile.client
+#    container_name: secure-chat-client-2
+#    depends_on:
+#      - chat-server
+#    networks:
+#      - encriptochat-network
+#    stdin_open: true
+#    tty: true
+#    environment:
+#      - SERVER_HOST=chat-server
+#      - SERVER_PORT=8888
+#
+#  chat-client-3:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile.client
+#    container_name: secure-chat-client-3
+#    depends_on:
+#      - chat-server
+#    networks:
+#      - encriptochat-network
+#    stdin_open: true
+#    tty: true
+#    environment:
+#      - SERVER_HOST=chat-server
+#      - SERVER_PORT=8888
+
+networks:
+  encriptochat-network:
+    name: encriptochat-network
+    driver: bridge

@@ -12,10 +12,23 @@ class ConfigManager:
     def __init__(self, config_file: str = 'config.ini'):
         self.config = configparser.ConfigParser()
 
+        # # Set default values
+        # self.config['Server'] = {
+        #     'host': 'localhost',
+        #     'port': '8888'
+        # }
+        # self.config['Logging'] = {
+        #     'level': 'INFO',
+        #     'debug_mode': 'False'
+        # }
+        # self.config['Client'] = {
+        #     'receive_buffer': '4096'
+        # }
+
         # Set default values
         self.config['Server'] = {
-            'host': 'localhost',
-            'port': '8888'
+            'host': os.getenv('SERVER_HOST', 'localhost'),
+            'port': os.getenv('SERVER_PORT', '8888')
         }
         self.config['Logging'] = {
             'level': 'INFO',
@@ -28,6 +41,12 @@ class ConfigManager:
         # Load configuration file if it exists
         if os.path.exists(config_file):
             self.config.read(config_file)
+
+            # Override with environment variables if they exist
+            if os.getenv('SERVER_HOST'):
+                self.config['Server']['host'] = os.getenv('SERVER_HOST')
+            if os.getenv('SERVER_PORT'):
+                self.config['Server']['port'] = os.getenv('SERVER_PORT')
         else:
             # Create config file with default values
             with open(config_file, 'w') as configfile:
