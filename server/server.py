@@ -11,13 +11,14 @@ import sqlite3
 import uuid
 from typing import Dict, Optional
 
+import colorama
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import serialization
 from flask import Flask, current_app, render_template
 from server_status_manager import init_app, run_status_app, app
-
+from colorama import init, Fore, Back, Style
 from server_status_manager import init_app
 
 app = Flask(__name__)
@@ -283,6 +284,11 @@ class SecureChatServer:
             sender_name = sender_info['username']
             message_data['from'] = sender_name
 
+            if target_username:
+                message_data['is_private'] = True  # Add this flag for private messages
+            else:
+                message_data['is_private'] = False  # For broadcast messages
+
             # Re-encode to JSON with the 'from' field
             outgoing = json.dumps(message_data) + "\n"
             self.logger.info(f"Prepared outgoing message: {outgoing}")
@@ -318,6 +324,7 @@ class SecureChatServer:
             self.logger.error(f"JSON decode error in broadcast: {e}")
         except Exception as e:
             self.logger.error(f'Message broadcast error: {e}')
+        print(Fore.RESET)
 
     async def start_server(self):
         """

@@ -21,7 +21,7 @@ from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives import serialization
-
+from colorama import init, Fore, Back, Style
 from config_manager import ConfigManager
 
 
@@ -187,9 +187,13 @@ class SecureChatClient:
             if to_user:
                 msg_data["to"] = to_user
 
+            print("\r\033[K", end="")
+            print(Fore.YELLOW + f"[{to_user}] {message}\n", end="")
+            print(Style.RESET_ALL, end="")
             self.logger.info(f"Sending message data to server: {msg_data}")
             # Send JSON
             self.writer.write((json.dumps(msg_data) + "\n").encode())
+
             await self.writer.drain()
 
         except Exception as e:
@@ -226,9 +230,18 @@ class SecureChatClient:
 
                     # Get sender information
                     sender_name = packet.get("from", "unknown")
+                    is_private = packet.get("is_private", False)
+
+                    # print("Enter message (or 'exit'): ", end="", flush=True)
+                    color_and_sender  = Fore.RED + f"[Private Message from {sender_name}]:" if is_private else Fore.GREEN + f"[{sender_name}]:"
 
                     # Clear the current input line and print the message
-                    print(f"\n[{sender_name}]: {decrypted}")
+                    print("\r\033[K", end="")
+                    print(f"{color_and_sender} {decrypted}", end="")
+
+                    # Reset the terminal color
+                    print(Style.RESET_ALL)
+
                     print("Enter message (or 'exit'): ", end="", flush=True)
 
                 except Exception as e:
@@ -270,7 +283,6 @@ class SecureChatClient:
                     else:
                         # Broadcast message
                         await self.send_message(message)
-
                 except EOFError:
                     break
                 except Exception as e:
