@@ -116,6 +116,8 @@ resource "aws_instance" "chat_server" {
   associate_public_ip_address = true
   key_name                   = "chat_server_key" # var.key_pair_name
 
+  # Previous configuration remains the same until user_data section
+
   user_data = <<-EOF
               #!/bin/bash
               # Enable detailed logging
@@ -156,33 +158,71 @@ resource "aws_instance" "chat_server" {
                 exit 1
               fi
 
-              # Set correct permissions
-              echo "Setting permissions..."
-              chown -R ubuntu:ubuntu /app
+              # Create run_server.sh script
+              echo "Creating run_server.sh script..."
+              cat > /app/run_server.sh <<'SCRIPT'
+              #!/bin/bash
+
+              # Enable logging
+              exec > >(tee -a /var/log/run_server.log) 2>&1
+
+              echo "Starting server script at $(date)"
+
+              # Change to app directory
+              cd /app
 
               # Check if docker-compose.yml exists
-              echo "Checking docker-compose.yml..."
-
-              if [! -f "/app/docker-compose.yml" ]; then
-                echo "docker-compose.yml not found!"
-                ls -la /app
-                exit 1
+              if [ ! -f "docker-compose.yml" ]; then
+                  echo "Error: docker-compose.yml not found in $(pwd)"
+                  ls -la
+                  exit 1
               fi
 
-              sudo -i
-              # Start the containers
-              if [ ! -f "/app/docker-compose.yml" ]; then
-                echo "docker-compose.yml not found!"
-                ls -la /app
-                exit 1
+              # Check Docker status
+              if ! systemctl is-active --quiet docker; then
+                  echo "Docker is not running. Attempting to start..."
+                  systemctl start docker
+                  sleep 5
               fi
+
+              # Check Docker Compose installation
+              if ! command -v docker-compose &> /dev/null; then
+                  echo "Error: docker-compose not found"
+                  exit 1
+              fi
+
+              # Pull latest images (optional)
+              echo "Pulling latest images..."
+              docker-compose pull
+
+              # Stop any existing containers
+              echo "Stopping any existing containers..."
+              docker-compose down
 
               # Start the containers
               echo "Starting containers with docker-compose..."
-              sudo docker-compose up --build -d
+              docker-compose up --build -d
 
-              echo "Script completed successfully"
+              # Check container status
+              echo "Checking container status..."
+              docker-compose ps
+
+              echo "Server script completed at $(date)"
+              SCRIPT
+
+              # Set permissions
+              echo "Setting permissions..."
+              chmod +x /app/run_server.sh
+              chown -R ubuntu:ubuntu /app
+
+              # Run the server script
+              echo "Running server script..."
+              /app/run_server.sh
+
+              echo "User data script completed successfully"
               EOF
+
+  # Rest of the configuration remains the same
   tags = {
     Name = "chat-server"
   }
