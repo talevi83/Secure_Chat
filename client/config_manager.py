@@ -12,7 +12,7 @@ class ConfigManager:
     def __init__(self, config_file: str = 'config.ini'):
         self.config = configparser.ConfigParser()
 
-        # # Set default values
+        # # Set default values - local run
         # self.config['Server'] = {
         #     'host': 'localhost',
         #     'port': '8888'
@@ -25,7 +25,7 @@ class ConfigManager:
         #     'receive_buffer': '4096'
         # }
 
-        # Set default values
+        # Set default values - server run
         self.config['Server'] = {
             'host': os.getenv('SERVER_HOST', 'localhost'),
             'port': os.getenv('SERVER_PORT', '8888')

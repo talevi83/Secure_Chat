@@ -118,39 +118,70 @@ resource "aws_instance" "chat_server" {
 
   user_data = <<-EOF
               #!/bin/bash
-              # Use set -e to stop on any error
-              set -e
+              # Enable detailed logging
+              exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+
+              echo "Starting user data script execution..."
 
               # Update and install required packages
-              sudo apt-get update
-              sudo apt-get install -y docker.io git
+              echo "Updating system packages..."
+              apt-get update
+              apt-get install -y docker.io git
 
               # Start and enable docker
-              sudo systemctl start docker
-              sudo systemctl enable docker
+              echo "Starting Docker service..."
+              systemctl start docker
+              systemctl enable docker
 
               # Add ubuntu user to docker group
-              sudo usermod -aG docker ubuntu
+              echo "Adding ubuntu user to docker group..."
+              usermod -aG docker ubuntu
 
               # Install Docker Compose
-              sudo curl -L "https://github.com/docker/compose/releases/download/v2.23.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-              sudo chmod +x /usr/local/bin/docker-compose
+              echo "Installing Docker Compose..."
+              curl -L "https://github.com/docker/compose/releases/download/v2.23.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+              chmod +x /usr/local/bin/docker-compose
 
-              # Create app directory
-              sudo mkdir -p /app/chat-server
-              sudo chown ubuntu:ubuntu /app/chat-server
-              cd /app/chat-server/
+              # Create app directory and set permissions
+              echo "Setting up application directory..."
+              mkdir -p /app
+              cd /app
 
-              # Clone your repository
-              git clone https://github.com/talevi83/Secure_Chat.git .
+              # Clone repository
+              echo "Cloning repository..."
+              if git clone https://github.com/talevi83/Secure_Chat.git .; then
+                echo "Repository cloned successfully"
+              else
+                echo "Failed to clone repository"
+                exit 1
+              fi
+
+              # Set correct permissions
+              echo "Setting permissions..."
+              chown -R ubuntu:ubuntu /app
+
+              # Check if docker-compose.yml exists
+              echo "Checking docker-compose.yml..."
+
+              if [! -f "/app/docker-compose.yml" ]; then
+                echo "docker-compose.yml not found!"
+                ls -la /app
+                exit 1
+              fi
+
               sudo -i
-              cd /app/chat-server/
+              # Start the containers
+              if [ ! -f "/app/docker-compose.yml" ]; then
+                echo "docker-compose.yml not found!"
+                ls -la /app
+                exit 1
+              fi
 
-              # Start the containers (assuming docker-compose.yml exists in the repo)
-              sudo docker-compose up -d
+              # Start the containers
+              echo "Starting containers with docker-compose..."
+              sudo docker-compose up --build -d
 
-              # Add logging to help debug
-              echo "Script completed" >> /var/log/user-data.log
+              echo "Script completed successfully"
               EOF
   tags = {
     Name = "chat-server"
