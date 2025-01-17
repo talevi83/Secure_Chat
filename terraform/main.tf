@@ -217,7 +217,8 @@ resource "aws_instance" "chat_server" {
 
               # Run the server script
               echo "Running server script..."
-              /app/run_server.sh
+              cd /app
+              ./run_server.sh
 
               echo "User data script completed successfully"
               EOF
