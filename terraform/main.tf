@@ -116,14 +116,14 @@ resource "aws_instance" "chat_server" {
   associate_public_ip_address = true
   key_name                   = "chat_server_key" # var.key_pair_name
 
+  
   # Previous configuration remains the same until user_data section
-
   user_data = <<-EOF
               #!/bin/bash
               # Enable detailed logging
               exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
 
-              echo "Starting user data script execution..."
+              echo "Starting user data script execution at $(date)"
 
               # Update and install required packages
               echo "Updating system packages..."
@@ -134,6 +134,10 @@ resource "aws_instance" "chat_server" {
               echo "Starting Docker service..."
               systemctl start docker
               systemctl enable docker
+
+              # Wait for Docker to be fully operational
+              echo "Waiting for Docker to be ready..."
+              timeout 60 bash -c 'until docker info >/dev/null 2>&1; do sleep 1; done'
 
               # Add ubuntu user to docker group
               echo "Adding ubuntu user to docker group..."
@@ -158,6 +162,25 @@ resource "aws_instance" "chat_server" {
                 exit 1
               fi
 
+              # Create startup service
+              echo "Creating startup service..."
+              cat > /etc/systemd/system/docker-app.service <<'SERVICE'
+              [Unit]
+              Description=Docker Compose Application Service
+              Requires=docker.service
+              After=docker.service
+
+              [Service]
+              Type=oneshot
+              RemainAfterExit=yes
+              WorkingDirectory=/app
+              ExecStart=/app/run_server.sh
+              User=root
+
+              [Install]
+              WantedBy=multi-user.target
+              SERVICE
+
               # Create run_server.sh script
               echo "Creating run_server.sh script..."
               cat > /app/run_server.sh <<'SCRIPT'
@@ -167,6 +190,9 @@ resource "aws_instance" "chat_server" {
               exec > >(tee -a /var/log/run_server.log) 2>&1
 
               echo "Starting server script at $(date)"
+
+              # Wait for system to be fully initialized
+              sleep 30
 
               # Change to app directory
               cd /app
@@ -178,26 +204,23 @@ resource "aws_instance" "chat_server" {
                   exit 1
               fi
 
-              # Check Docker status
+              # Ensure Docker is running
+              echo "Ensuring Docker is running..."
               if ! systemctl is-active --quiet docker; then
-                  echo "Docker is not running. Attempting to start..."
+                  echo "Starting Docker service..."
                   systemctl start docker
+                  sleep 10
+              fi
+
+              # Verify Docker is operational
+              until docker info >/dev/null 2>&1; do
+                  echo "Waiting for Docker to be ready..."
                   sleep 5
-              fi
-
-              # Check Docker Compose installation
-              if ! command -v docker-compose &> /dev/null; then
-                  echo "Error: docker-compose not found"
-                  exit 1
-              fi
-
-              # Pull latest images (optional)
-              echo "Pulling latest images..."
-              docker-compose pull
+              done
 
               # Stop any existing containers
               echo "Stopping any existing containers..."
-              docker-compose down
+              docker-compose down || true
 
               # Start the containers
               echo "Starting containers with docker-compose..."
@@ -215,12 +238,13 @@ resource "aws_instance" "chat_server" {
               chmod +x /app/run_server.sh
               chown -R ubuntu:ubuntu /app
 
-              # Run the server script
-              echo "Running server script..."
-              cd /app
-              ./run_server.sh
+              # Enable and start the service
+              echo "Enabling and starting docker-app service..."
+              systemctl daemon-reload
+              systemctl enable docker-app
+              systemctl start docker-app
 
-              echo "User data script completed successfully"
+              echo "User data script completed successfully at $(date)"
               EOF
 
   # Rest of the configuration remains the same
