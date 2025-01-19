@@ -15,8 +15,11 @@ import base64
 import json
 import logging
 import argparse
+from datetime import datetime
+from getpass import getpass
 from typing import Optional
 
+import requests
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
@@ -113,7 +116,7 @@ class SecureChatClient:
         """
         1) Receive "ACTION_REQUIRED"
         2) Send {"action":"login","username":..., "password":...}
-        3) If "AUTH_FAILED", done. If "AUTH_OK", proceed:
+        3) If "AUTH_FAILED" or "AUTH_FAILED_ALREADY_LOGGED_IN", done. If "AUTH_OK", proceed:
         4) Send public key (multiline PEM)
         5) Receive base64-encoded encrypted key, decode & decrypt
         6) Receive "AUTH_SUCCESS"
@@ -133,19 +136,24 @@ class SecureChatClient:
         self.writer.write((json.dumps(login_data) + "\n").encode())
         await self.writer.drain()
 
-        # Step 3: read "AUTH_FAILED" or "AUTH_OK"
+        # Step 3: read server response
         resp = await self.reader.readline()
         if not resp:
             self.logger.error("No login response from server.")
             return False
+
         msg = resp.decode().strip()
-        if msg == "AUTH_FAILED":
+        if msg == "AUTH_FAILED_ALREADY_LOGGED_IN":
+            print(f"\nError: User '{username}' is already logged in. Please try with a different account.")
+            self.logger.error("Login rejected - user already logged in")
+            return False
+        elif msg == "AUTH_FAILED":
+            print("\nError: Invalid username or password.")
             self.logger.error("Server rejected credentials.")
             return False
         elif msg != "AUTH_OK":
             self.logger.error(f"Unexpected server response: {msg}")
             return False
-
         # Step 4: Send the public key in PEM format (multiline), plus extra newline
         pem_bytes = self._serialize_public_key()
         self.writer.write(pem_bytes + b"\n")
@@ -255,6 +263,41 @@ class SecureChatClient:
 
         self.logger.info("Message receiving stopped")
 
+    async def get_connected_users(self):
+        """Fetch connected users from the API"""
+        try:
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None,
+                lambda: requests.get('http://localhost:8000/api/users')
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            self.logger.error(f"Error fetching users: {e}")
+            return None
+
+    async def print_connected_users(self):
+        """Display the list of connected users"""
+        users_data = await self.get_connected_users()
+        if users_data and 'users' in users_data:
+            print("\nConnected users:")
+            for user in users_data['users']:
+                # Format the connection time if available
+                connected_time = user.get('connected_since', 'unknown time')
+                if connected_time != 'unknown time':
+                    try:
+                        # Convert ISO format to more readable time
+                        dt = datetime.fromisoformat(connected_time)
+                        connected_time = dt.strftime('%H:%M:%S')
+                    except ValueError:
+                        pass
+                print(f"- {user['username']} (connected since {connected_time})")
+            print()  # Extra line for readability
+        else:
+            print("\nNo users connected or error fetching user list\n")
+
+
     async def interactive_chat(self):
         """
         Read user input in a loop, send messages (until 'exit').
@@ -272,6 +315,10 @@ class SecureChatClient:
 
                     if message.lower() == 'exit':
                         break
+
+                    if message == '@users':
+                        await self.print_connected_users()
+                        continue
 
                     # Handle direct messages starting with @
                     if message.startswith("@"):
@@ -312,13 +359,14 @@ class SecureChatClient:
             print("1) Register new user")
             print("2) Login")
             print("3) Quit")
+            print("\n*** To get the active users list insert @users during the chat ***\n")
             choice = input("Choose an option: ").strip()
 
             if choice == "1":
                 # connect and register
                 await self.connect()
                 username = input("Enter a unique username: ")
-                password = input("Enter a password: ")
+                password = getpass("Password: ")
                 success = await self.register(username, password)
                 # close after register attempt
                 if self.writer:
@@ -330,7 +378,7 @@ class SecureChatClient:
                 # connect and login
                 await self.connect()
                 username = input("Username: ")
-                password = input("Password: ")
+                password = getpass("Password: ")
                 success = await self.login(username, password)
                 if success:
                     # proceed to chat

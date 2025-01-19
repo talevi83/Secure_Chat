@@ -173,6 +173,16 @@ class SecureChatServer:
         """
         Login handshake steps with shared symmetric key
         """
+        # First check if user is already logged in
+        if username in self.users:
+            self.logger.warning(f"Rejecting duplicate login attempt for user: {username}")
+            writer.write(b'AUTH_FAILED_ALREADY_LOGGED_IN\n')
+            await writer.drain()
+            writer.close()
+            await writer.wait_closed()
+            return
+
+        # Proceed with normal authentication
         user_id = self.authenticate_user(username, password)
         if not user_id:
             writer.write(b'AUTH_FAILED\n')
@@ -204,7 +214,7 @@ class SecureChatServer:
 
         # Use the shared symmetric key and encrypt it for this client
         encrypted_symmetric_key = public_key.encrypt(
-            self.symmetric_key,  # Use the shared key
+            self.symmetric_key,
             padding.OAEP(
                 mgf=padding.MGF1(algorithm=hashes.SHA256()),
                 algorithm=hashes.SHA256(),
@@ -215,11 +225,13 @@ class SecureChatServer:
         # Base64-encode the encrypted key
         encoded_key = base64.b64encode(encrypted_symmetric_key)
 
-        # Store client info
+        # Store client info with connection timestamp
+        from datetime import datetime
         self.clients[user_id] = {
             'writer': writer,
             'public_key': public_key,
-            'username': username
+            'username': username,
+            'connected_since': datetime.utcnow().isoformat()
         }
         self.users[username] = user_id
 
