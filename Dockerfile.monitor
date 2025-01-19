@@ -1,0 +1,22 @@
+# Use Python 3.9 slim image as base
+FROM python:3.9-slim
+
+# Set working directory in container
+WORKDIR /app
+
+# Copy requirements first to leverage Docker cache
+COPY monitor/requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Create templates directory and copy files
+RUN mkdir -p templates
+COPY monitor/flask-monitor.py .
+COPY monitor/templates/server_status.html ./templates/
+
+# Expose port for monitoring interface
+EXPOSE 8080
+
+# Command to run the monitor
+CMD ["python", "flask-monitor.py"]

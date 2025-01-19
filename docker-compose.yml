@@ -8,56 +8,26 @@ services:
     container_name: secure-chat-server
     ports:
       - "8888:8888"  # Chat server port
-      - "8080:8080"  # Web monitoring interface
+      - "8000:8000"  # API port
     networks:
       - encriptochat-network
     volumes:
       - ./server/users.db:/app/users.db  # Persist user database
 
-#  chat-client-1:
-#    build:
-#      context: .
-#      dockerfile: Dockerfile.client
-#    container_name: secure-chat-client-1
-#    depends_on:
-#      - chat-server
-#    networks:
-#      - encriptochat-network
-#    stdin_open: true
-#    tty: true
-#    environment:
-#      - SERVER_HOST=chat-server
-#      - SERVER_PORT=8888
-#
-#  chat-client-2:
-#    build:
-#      context: .
-#      dockerfile: Dockerfile.client
-#    container_name: secure-chat-client-2
-#    depends_on:
-#      - chat-server
-#    networks:
-#      - encriptochat-network
-#    stdin_open: true
-#    tty: true
-#    environment:
-#      - SERVER_HOST=chat-server
-#      - SERVER_PORT=8888
-#
-#  chat-client-3:
-#    build:
-#      context: .
-#      dockerfile: Dockerfile.client
-#    container_name: secure-chat-client-3
-#    depends_on:
-#      - chat-server
-#    networks:
-#      - encriptochat-network
-#    stdin_open: true
-#    tty: true
-#    environment:
-#      - SERVER_HOST=chat-server
-#      - SERVER_PORT=8888
+  monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile.monitor
+    container_name: secure-chat-monitor
+    ports:
+      - "8080:8080"  # Web monitoring interface
+    depends_on:
+      - chat-server
+    environment:
+      - API_BASE_URL=http://chat-server:8000  # Use Docker service name
+    networks:
+      - encriptochat-network
+    restart: unless-stopped  # Add restart policy
 
 networks:
   encriptochat-network:

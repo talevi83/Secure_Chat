@@ -116,7 +116,7 @@ resource "aws_instance" "chat_server" {
   associate_public_ip_address = true
   key_name                   = "chat_server_key" # var.key_pair_name
 
-  
+
   # Previous configuration remains the same until user_data section
   user_data = <<-EOF
               #!/bin/bash
@@ -195,7 +195,7 @@ resource "aws_instance" "chat_server" {
               sleep 30
 
               # Change to app directory
-              cd /app
+              cd /app/
 
               # Check if docker-compose.yml exists
               if [ ! -f "docker-compose.yml" ]; then

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat Server Status</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .online {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+        .offline {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+        .users-list {
+            margin-top: 20px;
+        }
+    </style>
+    <meta http-equiv="refresh" content="30">  <!-- Auto-refresh every 30 seconds -->
+</head>
+<body>
+    <h1>Chat Server Status</h1>
+
+    {% if error_message %}
+    <div class="status offline">
+        <h2>Error</h2>
+        <p>{{ error_message }}</p>
+    </div>
+    {% else %}
+    <div class="status {% if server_running %}online{% else %}offline{% endif %}">
+        <h2>Server Status: {% if server_running %}Online{% else %}Offline{% endif %}</h2>
+        <p>Connected Clients: {{ connected_clients }}</p>
+    </div>
+
+    {% if connected_users %}
+    <div class="users-list">
+        <h2>Connected Users:</h2>
+        <ul>
+        {% for user in connected_users %}
+            <li>{{ user }}</li>
+        {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    {% endif %}
+</body>
+</html>

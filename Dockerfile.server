@@ -16,20 +16,16 @@ COPY server/requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Create templates directory
-RUN mkdir -p templates
-
 # Copy server files
 COPY server/server.py .
-COPY server/server_status_manager.py .
-COPY server/templates/server_status.html ./templates/
+COPY server/server-api.py .
 
 # Create volume mount point for database
 VOLUME ["/app/users.db"]
 
-# Expose ports for chat server and monitoring
+# Expose ports for chat server and API
 EXPOSE 8888
-EXPOSE 8080
+EXPOSE 8000
 
 # Command to run the server
-CMD ["python", "server.py"]
+CMD ["python", "server-api.py"]

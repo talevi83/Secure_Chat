@@ -11,21 +11,11 @@ import sqlite3
 import uuid
 from typing import Dict, Optional
 
-import colorama
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import serialization
-from flask import Flask, current_app, render_template
-from server_status_manager import init_app, run_status_app, app
 from colorama import init, Fore, Back, Style
-from server_status_manager import init_app
-
-app = Flask(__name__)
-
-# We'll keep a reference to our SecureChatServer in a global variable
-chat_server = None
-
 
 class SecureChatServer:
     """
@@ -336,43 +326,11 @@ class SecureChatServer:
         self.logger.info(f"Server started on {self.host}:{self.port}")
         self.is_running = True
 
-
-@app.route('/')
-def server_status():
-    """
-    Displays the status of the secure chat server and connected clients.
-    """
-    if not chat_server:
-        return "Server not initialized."
-
-    server_running = chat_server.is_running
-    connected_clients = len(chat_server.clients)
-    with current_app.app_context():
-        return render_template(
-            'server_status.html',
-            server_running=server_running,
-            connected_clients=connected_clients
-        )
-
-
-async def main():
-    global chat_server
-    chat_server = SecureChatServer(host='0.0.0.0')  # Change this to bind to all interfaces
-
-    # Initialize Flask app with server instance
-    init_app(chat_server)
-
-    # Start the Secure Chat server (non-blocking)
-    await chat_server.start_server()
-
-    # Run Flask in a separate thread
-    import threading
-    flask_thread = threading.Thread(target=run_status_app, daemon=True)
-    flask_thread.start()
-
-    # Keep the server alive indefinitely
-    await chat_server._server.serve_forever()
-
-
 if __name__ == '__main__':
-    asyncio.run(main())
+    # This direct execution is mainly for testing
+    async def run_server():
+        server = SecureChatServer(host='0.0.0.0')
+        await server.start_server()
+        await server._server.serve_forever()
+
+    asyncio.run(run_server())
